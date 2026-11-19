@@ -34,7 +34,7 @@ def analyze_video(video_path, api_key):
     if video_file.state.name == "FAILED":
         raise Exception("Gemini video processing failed")
 
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     response = model.generate_content([video_file, GEMINI_PROMPT])
 
     try:
@@ -48,3 +48,4 @@ def analyze_video(video_path, api_key):
         text = '\n'.join(lines)
 
     return json.loads(text)
+
