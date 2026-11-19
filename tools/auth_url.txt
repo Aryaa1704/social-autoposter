@@ -1,0 +1,1 @@
+https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=855367790455-7q24g2ibeh7gubgc5oacds8vnkblnq9g.apps.googleusercontent.com&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.upload&state=0RYCGopvOqsN9dxAAE0MBJMqWaHnUn&code_challenge=IvhYhDtdjWKsJWvMM-unbtqs3DDKfpOtoW8f63VQGXk&code_challenge_method=S256&prompt=consent&access_type=offline

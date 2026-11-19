@@ -10,6 +10,8 @@ def extract_reel_url(text):
         r'https?://(?:www\.)?instagram\.com/reels/[\w-]+/?[^\s]*',
         r'https?://(?:www\.)?instagram\.com/p/[\w-]+/?[^\s]*',
         r'https?://(?:www\.)?instagram\.com/share/[\w-]+/?[^\s]*',
+        r'https?://(?:www\.)?youtube\.com/shorts/[\w-]+[^\s]*',
+        r'https?://youtu\.be/[\w-]+[^\s]*',
     ]
     for pattern in patterns:
         match = re.search(pattern, text)
@@ -44,3 +46,4 @@ def download_video(url, output_dir="downloads"):
             raise FileNotFoundError(f"Download failed: {downloaded_file}")
 
     return downloaded_file
+

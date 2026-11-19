@@ -18,7 +18,14 @@ def _save_state(state):
         json.dump(state, f, indent=2)
 
 def extract_url(text):
-    patterns = [r'https?://(?:www\.)?instagram\.com/reel/[\w-]+/?', r'https?://(?:www\.)?instagram\.com/p/[\w-]+/?', r'https?://(?:www\.)?instagram\.com/share/[\w-]+/?']
+    patterns = [
+        r'https?://(?:www\.)?instagram\.com/reel/[\w-]+/?',
+        r'https?://(?:www\.)?instagram\.com/reels/[\w-]+/?',
+        r'https?://(?:www\.)?instagram\.com/p/[\w-]+/?',
+        r'https?://(?:www\.)?instagram\.com/share/[\w-]+/?',
+        r'https?://(?:www\.)?youtube\.com/shorts/[\w-]+',
+        r'https?://youtu\.be/[\w-]+',
+    ]
     for p in patterns:
         m = re.search(p, text)
         if m: return m.group(0).rstrip('/')
@@ -51,3 +58,4 @@ def send_notification(token, chat_id, text):
         requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=15)
     except Exception:
         pass
+
