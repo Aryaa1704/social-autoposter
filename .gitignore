@@ -1,0 +1,8 @@
+﻿state/
+downloads/
+__pycache__/
+*.pyc
+.env
+client_secret.json
+token.json
+insta_session.json
