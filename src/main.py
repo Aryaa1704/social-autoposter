@@ -1,24 +1,31 @@
 ﻿"""
-Social Media Auto-Poster - Main Orchestrator
-Independent upload handlers for YouTube and Instagram with full logging.
+Social Media Auto-Poster - Main Orchestrator v2.0
+Features:
+- 1080p Full HD Video Downloader
+- Anti-copyright metadata stripping & 1.02x speed optimizer
+- Multi-AI (Gemini 2.0 Flash + Groq Llama-3.3 fallback)
+- Voice & spoken dialogue transcription breakdown
+- Smart Multi-Channel Category Routing (Gaming/Facts/Comedy/Main)
+- YouTube Shorts & Instagram Creator Reels uploader
+- Telegram notifications with live links & stats
 """
 import os
 import sys
 import traceback
 
 from downloader import download_video
+from video_editor import optimize_video, extract_thumbnail_frame
 from ai_generator import analyze_video
 from youtube_uploader import upload_to_youtube
 from instagram_uploader import upload_to_instagram
 from listeners.telegram_listener import get_new_links, send_notification
 from listeners.insta_dm_listener import get_new_links_from_dm
 
-
 def process_reel(url, source):
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 65)
     print(f"🎬 [START] Processing: {url}")
     print(f"   Source: {source}")
-    print("=" * 60)
+    print("=" * 65)
 
     result = {
         "url": url,
@@ -29,35 +36,41 @@ def process_reel(url, source):
         "error": None
     }
     video_path = None
+    thumb_path = None
 
     try:
-        # Step 1: Download
-        print("\n📥 [1/4] Downloading video...")
+        # Step 1: 1080p Download
+        print("\n📥 [1/5] Downloading video in 1080p Full HD...")
         video_path = download_video(url)
-        print(f"   ✅ Video downloaded: {video_path}")
 
-        # Step 2: Gemini AI Analysis
-        print("\n🤖 [2/4] Analyzing video with Gemini AI...")
-        gemini_key = os.environ.get('GEMINI_API_KEY', '').strip()
-        if not gemini_key:
-            raise ValueError("GEMINI_API_KEY is not set in GitHub Secrets!")
+        # Step 2: Video Optimization & Metadata Stripping
+        print("\n⚙️ [2/5] Cleaning video metadata & optimizing...")
+        video_path = optimize_video(video_path)
+        thumb_path = extract_thumbnail_frame(video_path)
 
-        meta = analyze_video(video_path, gemini_key)
+        # Step 3: Multi-AI Analysis (Gemini + Groq)
+        print("\n🤖 [3/5] Multi-AI analysis (visuals, speech, category, hook)...")
+        meta = analyze_video(video_path)
         result["metadata"] = meta
-        print(f"   ✅ Title: {meta.get('youtube_title')}")
-        print(f"   ✅ Summary: {meta.get('content_summary')}")
+        category = meta.get("detected_category", "general")
+        print(f"   🏷️ Detected Category: {category.upper()}")
+        print(f"   🎯 Hook Title: {meta.get('youtube_title')}")
+        if meta.get("spoken_summary"):
+            print(f"   🎙️ Spoken Words: {meta.get('spoken_summary')}")
 
-        # Step 3: YouTube Upload
+        # Step 4: YouTube Shorts Upload (with category routing)
         yt_refresh = os.environ.get('YOUTUBE_REFRESH_TOKEN', '').strip()
         if yt_refresh:
-            print("\n🔴 [3/4] Uploading to YouTube Shorts...")
+            print(f"\n🔴 [4/5] Uploading to YouTube Shorts (Category: {category})...")
             try:
                 yt = upload_to_youtube(
-                    video_path,
-                    meta.get('youtube_title', 'Awesome Short #Shorts'),
-                    meta.get('youtube_description', ''),
-                    meta.get('youtube_tags', ['Shorts']),
-                    meta.get('youtube_category_id', '22')
+                    video_path=video_path,
+                    title=meta.get('youtube_title'),
+                    description=meta.get('youtube_description'),
+                    tags=meta.get('youtube_tags', ['Shorts']),
+                    category_id=meta.get('youtube_category_id', '22'),
+                    category=category,
+                    thumbnail_path=thumb_path
                 )
                 result["youtube"] = yt
                 print(f"   ✅ YouTube Upload SUCCESS: {yt.get('url')}")
@@ -66,18 +79,18 @@ def process_reel(url, source):
                 traceback.print_exc()
                 result["youtube_error"] = str(e)
         else:
-            print("\n🔴 [3/4] YouTube skipped (YOUTUBE_REFRESH_TOKEN not set)")
+            print("\n🔴 [4/5] YouTube skipped (YOUTUBE_REFRESH_TOKEN not set)")
 
-        # Step 4: Instagram Upload (Only if credentials provided)
+        # Step 5: Instagram Upload (to Main Creator Account)
         ig_token = os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip()
         ig_user = os.environ.get('INSTAGRAM_USER_ID', '').strip()
         if ig_token and ig_user:
-            print("\n🟣 [4/4] Uploading to Instagram Reels...")
+            print("\n🟣 [5/5] Uploading to Main Instagram Creator Account...")
             try:
                 ig = upload_to_instagram(
-                    video_path,
-                    meta.get('instagram_caption', ''),
-                    meta.get('instagram_hashtags', [])
+                    video_path=video_path,
+                    caption=meta.get('instagram_caption', ''),
+                    hashtags=meta.get('instagram_hashtags', [])
                 )
                 result["instagram"] = ig
                 print(f"   ✅ Instagram Upload SUCCESS: {ig.get('url')}")
@@ -86,9 +99,8 @@ def process_reel(url, source):
                 traceback.print_exc()
                 result["instagram_error"] = str(e)
         else:
-            print("\n🟣 [4/4] Instagram upload skipped (INSTAGRAM_ACCESS_TOKEN not configured)")
+            print("\n🟣 [5/5] Instagram upload skipped (INSTAGRAM_ACCESS_TOKEN not set)")
 
-        # Success if at least one platform succeeded
         if result.get("youtube") or result.get("instagram"):
             result["success"] = True
 
@@ -98,27 +110,28 @@ def process_reel(url, source):
         result["error"] = str(e)
 
     finally:
-        # Cleanup temp video file
-        if video_path and os.path.exists(video_path):
-            try:
-                os.remove(video_path)
-                print("   🧹 Cleaned up temporary video file.")
-            except Exception:
-                pass
+        # Cleanup
+        for p in [video_path, thumb_path]:
+            if p and os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
 
     return result
-
 
 def build_telegram_message(result):
     if result.get("success"):
         meta = result.get("metadata", {})
         title = meta.get("youtube_title", "Viral Short")
-        summary = meta.get("content_summary", "")
+        cat = meta.get("detected_category", "general").upper()
+        spoken = meta.get("spoken_summary", "")
 
         msg = f"🚀 <b>Video Uploaded Successfully!</b>\n\n"
         msg += f"🎬 <b>Title:</b> {title}\n"
-        if summary:
-            msg += f"📝 <b>About:</b> {summary}\n"
+        msg += f"🏷️ <b>Category:</b> #{cat}\n"
+        if spoken:
+            msg += f"🎙️ <b>Spoken Audio:</b> <i>{spoken}</i>\n"
         msg += f"🔗 <b>Source:</b> {result.get('url')}\n\n"
 
         if result.get("youtube"):
@@ -135,14 +148,13 @@ def build_telegram_message(result):
         return (
             f"❌ <b>Upload Failed</b>\n\n"
             f"🔗 <b>Link:</b> {result.get('url')}\n"
-            f"⚠️ <b>Error:</b> {err[:200]}"
+            f"⚠️ <b>Error:</b> {err[:250]}"
         )
 
-
 def main():
-    print("=" * 60)
-    print("🚀 Social Media Auto-Poster Starting...")
-    print("=" * 60)
+    print("=" * 65)
+    print("🚀 Social Media Auto-Poster v2.0 Starting...")
+    print("=" * 65)
 
     token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
     chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
@@ -151,16 +163,16 @@ def main():
         print("❌ TELEGRAM_BOT_TOKEN is missing!")
         return
 
-    # Check Telegram
+    # 1. Listen from Telegram Bot
     print("\n[TELEGRAM] Checking for links...")
     raw_tg = get_new_links(token, chat_id)
     links = [{"url": l, "source": "Telegram"} for l in raw_tg]
 
-    # Check Instagram DMs if configured
+    # 2. Listen from Instagram Dummy Account DMs (if configured)
     if os.environ.get('INSTA_DM_USERNAME', '').strip():
         print("\n[INSTAGRAM DM] Checking dummy account DMs...")
         raw_dm = get_new_links_from_dm()
-        links += [{"url": l, "source": "Instagram DM"} for l in raw_dm]
+        links += [{"url": l, "source": "Instagram DM (Dummy Box)"} for l in raw_dm]
 
     print(f"\n📊 Total new links to process: {len(links)}")
 
@@ -174,10 +186,9 @@ def main():
         send_notification(token, chat_id, msg)
         print("   📬 Sent status notification to Telegram.")
 
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 65)
     print("🏁 All processing finished successfully.")
-    print("=" * 60)
-
+    print("=" * 65)
 
 if __name__ == "__main__":
     main()
