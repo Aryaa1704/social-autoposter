@@ -1,5 +1,5 @@
-﻿"""Gemini AI Video Analysis and Metadata Generation."""
-import google.generativeai as genai
+﻿"""Gemini AI Video Analysis with robust error handling and fallback."""
+import os
 import json
 import time
 
@@ -22,30 +22,56 @@ Return ONLY JSON. Do not include markdown or backticks.
 """
 
 def analyze_video(video_path, api_key):
-    genai.configure(api_key=api_key)
-    video_file = genai.upload_file(path=video_path)
-
-    waited = 0
-    while video_file.state.name == "PROCESSING" and waited < 120:
-        time.sleep(5)
-        waited += 5
-        video_file = genai.get_file(video_file.name)
-
-    if video_file.state.name == "FAILED":
-        raise Exception("Gemini video processing failed")
-
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    response = model.generate_content([video_file, GEMINI_PROMPT])
+    api_key = (api_key or "").strip()
+    if not api_key:
+        print("   ⚠️ No Gemini API key provided. Using fallback metadata.")
+        return get_fallback_metadata()
 
     try:
-        genai.delete_file(video_file.name)
-    except Exception:
-        pass
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
 
-    text = response.text.strip()
-    if text.startswith('```'):
-        lines = [l for l in text.split('\n') if not l.strip().startswith('```')]
-        text = '\n'.join(lines)
+        print("   📤 Uploading video to Gemini...")
+        video_file = genai.upload_file(path=video_path)
 
-    return json.loads(text)
+        waited = 0
+        while video_file.state.name == "PROCESSING" and waited < 120:
+            time.sleep(5)
+            waited += 5
+            video_file = genai.get_file(video_file.name)
 
+        if video_file.state.name == "FAILED":
+            raise Exception("Gemini video processing state returned FAILED")
+
+        print("   🧠 Asking Gemini 2.0 Flash to generate title & tags...")
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        response = model.generate_content([video_file, GEMINI_PROMPT])
+
+        try:
+            genai.delete_file(video_file.name)
+        except Exception:
+            pass
+
+        text = response.text.strip()
+        if text.startswith('```'):
+            lines = [l for l in text.split('\n') if not l.strip().startswith('```')]
+            text = '\n'.join(lines)
+
+        data = json.loads(text)
+        print("   ✅ Gemini analysis complete!")
+        return data
+
+    except Exception as e:
+        print(f"   ⚠️ Gemini AI failed ({e}). Switching to Smart Fallback metadata so upload continues!")
+        return get_fallback_metadata()
+
+def get_fallback_metadata():
+    return {
+        "youtube_title": "Wait for the End! 🤯🔥 #Shorts",
+        "youtube_description": "Watch till the end! Like, share and subscribe for more daily viral shorts. 🔥\n\n#Shorts #Viral #Trending #Reels",
+        "youtube_tags": ["Shorts", "Viral", "Trending", "Reels", "Explore", "ForYou"],
+        "youtube_category_id": "22",
+        "instagram_caption": "Wait for it... 🤯🔥 Follow for more daily reels!\n.",
+        "instagram_hashtags": ["reels", "viral", "trending", "explore", "reelsinstagram", "fyp", "viralreels"],
+        "content_summary": "Daily Viral Video"
+    }
