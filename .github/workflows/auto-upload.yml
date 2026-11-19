@@ -41,7 +41,9 @@ jobs:
           INSTA_DM_USERNAME: ${{ secrets.INSTA_DM_USERNAME }}
           INSTA_DM_PASSWORD: ${{ secrets.INSTA_DM_PASSWORD }}
           INSTA_MAIN_USERNAME: ${{ secrets.INSTA_MAIN_USERNAME }}
-        run: cd src && python main.py
+        run: |
+          mkdir -p src/state
+          cd src && python main.py
 
       - name: Save State Cache
         uses: actions/cache/save@v4
@@ -49,3 +51,4 @@ jobs:
         with:
           path: src/state/
           key: autoposter-state-${{ github.run_id }}
+
