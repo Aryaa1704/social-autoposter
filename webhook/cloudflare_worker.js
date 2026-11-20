@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker: Telegram Webhook -> Instant GitHub Actions Trigger
- * Auto-sanitizes repo name and token to prevent 404s!
+ * Hardcoded to Aryaa1704/social-autoposter to prevent any typo or space issues!
  */
 
 export default {
@@ -16,22 +16,14 @@ export default {
 
       // Check if message contains a reel or short link
       if (text.includes('instagram.com') || text.includes('youtube.com') || text.includes('youtu.be')) {
-        // Auto-sanitize repo name (handles full URLs, extra spaces, etc.)
-        let repo = (env.GITHUB_REPO || 'Aryaa1704/social-autoposter').trim();
-        repo = repo.replace('https://github.com/', '')
-                   .replace('http://github.com/', '')
-                   .replace('github.com/', '')
-                   .replace(/^\/+|\/+$/g, '')
-                   .trim();
-        if (!repo || !repo.includes('/')) {
-          repo = 'Aryaa1704/social-autoposter';
-        }
+        // EXACT repository name with no spaces and proper hyphen
+        const repo = 'Aryaa1704/social-autoposter';
 
         // Auto-sanitize PAT token
-        let pat = (env.GITHUB_PAT || '').trim().replace(/^["']|["']$/g, '');
+        let pat = (env.GITHUB_PAT || env.GITHUB_TOKEN || '').trim().replace(/^["']|["']$/g, '');
 
         if (!pat) {
-          return new Response(JSON.stringify({ error: 'Missing GITHUB_PAT env variable' }), { status: 500 });
+          return new Response(JSON.stringify({ error: 'Missing GITHUB_PAT env variable in Cloudflare' }), { status: 500 });
         }
 
         // Trigger GitHub Actions workflow instantly via repository_dispatch
