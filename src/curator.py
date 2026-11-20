@@ -6,6 +6,7 @@ cleans metadata, generates new viral hooks/captions, and uploads directly.
 import os
 import sys
 import json
+import random
 import traceback
 import yt_dlp
 
@@ -93,6 +94,7 @@ def run_curator():
         yt_channels = feeds.get('youtube_channels', [])
         ig_accounts = feeds.get('instagram_accounts', [])
         all_targets = yt_channels + ig_accounts
+        random.shuffle(all_targets)
 
         picked_video = None
 
