@@ -70,11 +70,7 @@ def get_instagram_credentials(category="general"):
     print(f"   🎯 Routing to MAIN Instagram account (Category: {category}, ID: {main_uid})")
     return main_token, main_uid
 
-def upload_to_instagram(video_path, caption, hashtags, category="general"):
-    access_token, user_id = get_instagram_credentials(category)
-    if not access_token or not user_id:
-        raise ValueError("Instagram credentials (token or user_id) missing for this category!")
-
+def _do_upload(video_path, caption, hashtags, access_token, user_id, category):
     tags_str = ' '.join(f'#{h.strip("#")}' for h in hashtags[:25])
     full_caption = f"{caption}\n\n{tags_str}".strip()[:2200]
     file_size = os.path.getsize(video_path)
@@ -183,3 +179,23 @@ def upload_to_instagram(video_path, caption, hashtags, category="general"):
         'url': f"https://www.instagram.com/reel/",
         'category': category
     }
+
+def upload_to_instagram(video_path, caption, hashtags, category="general"):
+    access_token, user_id = get_instagram_credentials(category)
+    if not access_token or not user_id:
+        raise ValueError("Instagram credentials (token or user_id) missing for this category!")
+
+    try:
+        return _do_upload(video_path, caption, hashtags, access_token, user_id, category)
+    except Exception as e:
+        # If specialized category fails due to API block or expired token, try fallback to Main account
+        main_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "").strip()
+        main_uid = os.environ.get("INSTAGRAM_USER_ID", "").strip()
+        if main_token and main_uid and (access_token != main_token or user_id != main_uid):
+            print(f"   ⚠️ Category '{category}' Instagram upload encountered error: {e}")
+            print(f"   🔄 Automatically falling back to MAIN Instagram account (ID: {main_uid})...")
+            try:
+                return _do_upload(video_path, caption, hashtags, main_token, main_uid, "main")
+            except Exception as e2:
+                print(f"   ❌ Main Instagram account fallback also failed: {e2}")
+        raise e
