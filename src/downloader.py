@@ -127,10 +127,12 @@ def download_video(url, output_dir="downloads"):
             }
         ]
 
-    # Attach cookies if available to all strategies
+    # Attach cookies if available (skip for android/ios as yt-dlp skips them when cookies are provided)
     if cookie_path and os.path.exists(cookie_path):
         for s in strategies:
-            s['cookiefile'] = cookie_path
+            client = s.get('extractor_args', {}).get('youtube', {}).get('player_client', [])
+            if not any(c in ['android', 'ios'] for c in client):
+                s['cookiefile'] = cookie_path
 
     last_error = None
     info = None
