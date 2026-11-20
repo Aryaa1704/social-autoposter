@@ -15,6 +15,7 @@ import traceback
 
 from downloader import download_video
 from video_editor import optimize_video, extract_thumbnail_frame
+from thumbnail_designer import create_pro_thumbnail
 from ai_generator import analyze_video
 from youtube_uploader import upload_to_youtube
 from instagram_uploader import upload_to_instagram
@@ -48,7 +49,6 @@ def process_reel(url, source, forced_category=None):
         # Step 2: Video Optimization & Metadata Stripping
         print("\n⚙️ [2/5] Cleaning video metadata & optimizing...")
         video_path = optimize_video(video_path)
-        thumb_path = extract_thumbnail_frame(video_path)
 
         # Step 3: Multi-AI Analysis (Gemini + Groq)
         print("\n🤖 [3/5] Multi-AI analysis (visuals, speech, category, hook)...")
@@ -59,6 +59,12 @@ def process_reel(url, source, forced_category=None):
         print(f"   🎯 Hook Title: {meta.get('youtube_title')}")
         if meta.get("spoken_summary"):
             print(f"   🎙️ Spoken Words: {meta.get('spoken_summary')}")
+
+        # Step 3b: Pro Viral Thumbnail Design with Bold Typography Hook
+        thumb_hook = meta.get("thumbnail_hook") or meta.get("youtube_title", "MUST WATCH")
+        thumb_path = create_pro_thumbnail(video_path, thumb_hook)
+        if not thumb_path:
+            thumb_path = extract_thumbnail_frame(video_path)
 
         # Step 4: YouTube Shorts Upload (with category routing)
         yt_refresh = os.environ.get('YOUTUBE_REFRESH_TOKEN', '').strip()

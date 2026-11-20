@@ -45,7 +45,7 @@ def download_video(url, output_dir="downloads"):
     # Multi-client fallback strategies for YouTube to bypass bot checks on datacenter IPs
     if is_youtube:
         strategies = [
-            # Strategy 1: Android client (evades cloud IP bot check, with cookies if provided)
+            # Strategy 1: Modern Web / Embedded with Node.js JS Challenge Solver & Cookies
             {
                 'outtmpl': output_template,
                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/18/best[ext=mp4]/best',
@@ -54,21 +54,20 @@ def download_video(url, output_dir="downloads"):
                 'no_warnings': True,
                 'socket_timeout': 30,
                 'retries': 3,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['android']
-                    }
-                }
+                'js_runtimes': {'node': {}},
+                'remote_components': ['ejs:github'],
             },
-            # Strategy 2: Android Direct Stream (format 18 guaranteed single MP4)
+            # Strategy 2: Android client (mobile endpoint fallback)
             {
                 'outtmpl': output_template,
-                'format': '18/best[ext=mp4]/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/18/best[ext=mp4]/best',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
                 'socket_timeout': 30,
                 'retries': 3,
+                'js_runtimes': {'node': {}},
+                'remote_components': ['ejs:github'],
                 'extractor_args': {
                     'youtube': {
                         'player_client': ['android']
@@ -84,21 +83,25 @@ def download_video(url, output_dir="downloads"):
                 'no_warnings': True,
                 'socket_timeout': 30,
                 'retries': 3,
+                'js_runtimes': {'node': {}},
+                'remote_components': ['ejs:github'],
                 'extractor_args': {
                     'youtube': {
                         'player_client': ['ios']
                     }
                 }
             },
-            # Strategy 4: Universal stream fallback (Web client with cookies or any format)
+            # Strategy 4: Universal stream fallback (format 18 guaranteed single MP4)
             {
                 'outtmpl': output_template,
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best/b/bv*+ba',
+                'format': '18/best[ext=mp4]/best/b/bv*+ba',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
                 'socket_timeout': 30,
                 'retries': 3,
+                'js_runtimes': {'node': {}},
+                'remote_components': ['ejs:github'],
             }
         ]
     else:

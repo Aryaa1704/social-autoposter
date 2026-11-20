@@ -34,6 +34,7 @@ Generate an ultra-engaging metadata package in valid JSON:
     "youtube_description": "First line is a magnetic hook. Middle section explains the story or spoken dialogue. End has Call to Action and keywords.",
     "youtube_tags": ["Shorts", "Viral", "Trending", "tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"],
     "youtube_category_id": "20 for gaming, 24 for movies, 23 for comedy, 22 for general",
+    "thumbnail_hook": "Ultra-punchy 2 to 4 words in ALL CAPS designed for bold high-CTR poster text (e.g. 'HE IS BACK!', 'WHO IS REAL DAD?', 'TOO MANY CAPTAINS', 'WAKANDA CURSED', 'SECRET LEAKED!')",
     "instagram_caption": "First line hook with dialogue points and follow CTA. Clean line breaks.",
     "instagram_hashtags": ["reels", "viral", "trending", "explore", "tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10", "tag11", "tag12"],
     "content_summary": "One line summary of the video"
@@ -409,29 +410,34 @@ def get_fallback_metadata(context=""):
         title = "Level 999 IQ Gaming Moment... No Way! 😱🎮 #Shorts"
         caption = "Wait for the impossible clutch at the end! 🎮🔥\n\nDrop your IGN in comments!\n.\n."
         tags = ["Shorts", "Gaming", "Gameplay", "Clutch", "Gamer", "BGMI", "GTA5", "Viral"]
+        hook = "NO WAY!"
     elif any(k in text_lower for k in ["movie", "movies", "film", "cinema", "marvel", "actor", "hollywood", "bollywood", "series", "anime", "scene", "drdoom", "doomsday", "ultron", "thanos", "loki", "villain"]):
         category = "movies"
         cat_id = "24"
         title = "This Scene Hits Different Every Single Time... 🎬🔥 #Shorts"
         caption = "Rate this iconic scene from 1 to 10 in comments! 🎬🍿\n\nFollow for more daily edits!\n.\n."
         tags = ["Shorts", "Movies", "Cinema", "Film", "Scene", "Hollywood", "Marvel", "Trending"]
+        hook = "ABSOLUTE CINEMA"
     elif any(k in text_lower for k in ["funny", "comedy", "prank", "laugh", "meme", "relatable", "joke"]):
         category = "comedy"
         cat_id = "23"
         title = "Bro Thought Nobody Was Looking... 😂💀 #Shorts"
         caption = "I can't stop laughing at this! 😂💀\n\nTag that one friend!\n.\n."
         tags = ["Shorts", "Comedy", "Funny", "Meme", "Laugh", "Relatable", "Trending"]
+        hook = "WAIT FOR IT"
     else:
         category = "general"
         cat_id = "22"
         title = "He Actually Did This On Camera... 🤯💀 #Shorts"
         caption = "Wait till the end... 🤯💀\n\nTag a friend who needs to see this!\n.\n."
         tags = ["Shorts", "Viral", "Trending", "Reels", "Explore", "ForYou", "Insane", "Moment"]
+        hook = "SECRET REVEALED"
 
     return {
         "detected_category": category,
         "spoken_summary": "High intensity viral moment with unexpected twist",
         "youtube_title": title,
+        "thumbnail_hook": hook,
         "youtube_description": f"You won't believe what happened at the end! Watch till the last second.\n\nSubscribe for daily viral moments! 🔥\n\n#{category.capitalize()} #Shorts #Viral #Trending",
         "youtube_tags": tags,
         "youtube_category_id": cat_id,
