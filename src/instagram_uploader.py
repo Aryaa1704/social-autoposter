@@ -12,6 +12,21 @@ import requests
 
 def _upload_to_temp_hosting(video_path):
     """Fallback public hosting if direct upload is not supported."""
+    # 1. Catbox.moe (Direct CDN URL, Meta crawler never blocks this)
+    try:
+        with open(video_path, 'rb') as f:
+            res = requests.post(
+                'https://catbox.moe/user/api.php',
+                data={'reqtype': 'fileupload'},
+                files={'fileToUpload': ('video.mp4', f, 'video/mp4')},
+                timeout=120
+            )
+        if res.status_code == 200 and res.text.startswith('http'):
+            return res.text.strip()
+    except Exception as e:
+        print(f"   ⚠️ Catbox temp hosting failed: {e}")
+
+    # 2. Tmpfiles.org
     try:
         with open(video_path, 'rb') as f:
             res = requests.post('https://tmpfiles.org/api/v1/upload', files={'file': ('video.mp4', f, 'video/mp4')}, timeout=120)
@@ -19,7 +34,8 @@ def _upload_to_temp_hosting(video_path):
             url = res.json()['data']['url']
             return url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
     except Exception as e:
-        print(f"   ⚠️ Temp hosting failed: {e}")
+        print(f"   ⚠️ Tmpfiles temp hosting failed: {e}")
+
     return None
 
 def get_instagram_credentials(category="general"):
@@ -97,14 +113,17 @@ def _do_upload(video_path, caption, hashtags, access_token, user_id, category):
             upload_uri = init_data.get('uri') or f"https://rupload.facebook.com/ig-api-upload/v21.0/{container_id}"
 
             print(f"   📦 Streaming {file_size / (1024*1024):.2f} MB directly to Meta rupload servers...")
+            with open(video_path, 'rb') as f:
+                video_data = f.read()
+
             headers = {
                 "Authorization": f"OAuth {access_token}",
                 "offset": "0",
-                "file_size": str(file_size),
+                "file_size": str(len(video_data)),
+                "Content-Length": str(len(video_data)),
                 "Content-Type": "application/octet-stream"
             }
-            with open(video_path, 'rb') as f:
-                up_res = requests.post(upload_uri, headers=headers, data=f, timeout=180)
+            up_res = requests.post(upload_uri, headers=headers, data=video_data, timeout=180)
 
             if up_res.status_code in (200, 201):
                 print("   ✅ Direct binary upload to Meta succeeded!")
@@ -141,27 +160,31 @@ def _do_upload(video_path, caption, hashtags, access_token, user_id, category):
 
     # Step 3: Poll Meta Container Status until FINISHED
     print(f"   ⏳ Waiting for Meta to process Reel container ({container_id})...")
+    status_finished = False
     for attempt in range(40):
         time.sleep(6)
         s_res = requests.get(
             f"https://graph.facebook.com/v21.0/{container_id}",
-            params={'fields': 'status_code,status,error_message', 'access_token': access_token},
+            params={'fields': 'status_code', 'access_token': access_token},
             timeout=30
         )
         if s_res.status_code != 200:
-            print(f"      Polling note: status {s_res.status_code}")
+            print(f"      Polling note: status {s_res.status_code}: {s_res.text[:100]}")
             continue
 
         s_data = s_res.json()
         code = s_data.get('status_code', '')
         if code == 'FINISHED':
             print("   ✅ Reel processed and ready to publish!")
+            status_finished = True
             break
         elif code == 'ERROR':
-            err_msg = s_data.get('error_message') or s_data.get('status') or 'Meta encoding rejected'
-            raise Exception(f"Instagram processing failed by Meta: {err_msg}")
+            raise Exception(f"Instagram container processing failed with status ERROR: {s_data}")
         elif code in ('IN_PROGRESS', ''):
             pass
+
+    if not status_finished:
+        raise Exception(f"Instagram container processing timed out before FINISHED status.")
 
     # Step 4: Publish Reel
     print("   🚀 Publishing Reel to feed...")
