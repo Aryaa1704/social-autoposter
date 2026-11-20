@@ -83,14 +83,15 @@ def process_reel(url, source):
 
         # Step 5: Instagram Upload (to Main Creator Account)
         has_ig = any(k.startswith('INSTAGRAM_ACCESS_TOKEN') and v.strip() for k, v in os.environ.items())
-        ig_user = os.environ.get('INSTAGRAM_USER_ID', '').strip()
         if has_ig:
-            print("\n🟣 [5/5] Uploading to Main Instagram Creator Account...")
+            print(f"\n🟣 [5/5] Uploading to Instagram Reels (Category: {category})...")
             try:
                 ig = upload_to_instagram(
                     video_path=video_path,
                     caption=meta.get('instagram_caption', ''),
-                    hashtags=meta.get('instagram_hashtags', []),\n                    category=category\n                )
+                    hashtags=meta.get('instagram_hashtags', []),
+                    category=category
+                )
                 result["instagram"] = ig
                 print(f"   ✅ Instagram Upload SUCCESS: {ig.get('url')}")
             except Exception as e:
@@ -191,4 +192,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
