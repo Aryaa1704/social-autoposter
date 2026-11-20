@@ -45,7 +45,7 @@ def download_video(url, output_dir="downloads"):
     # Multi-client fallback strategies for YouTube to bypass bot checks on datacenter IPs
     if is_youtube:
         strategies = [
-            # Strategy 1: Combined mobile/TV clients (bypasses YouTube bot check)
+            # Strategy 1: Default modern clients (uses visionos/web, handles separate video+audio streams)
             {
                 'outtmpl': output_template,
                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
@@ -54,16 +54,26 @@ def download_video(url, output_dir="downloads"):
                 'no_warnings': True,
                 'socket_timeout': 30,
                 'retries': 5,
+            },
+            # Strategy 2: Android client (reliable on datacenter IPs)
+            {
+                'outtmpl': output_template,
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
+                'merge_output_format': 'mp4',
+                'quiet': True,
+                'no_warnings': True,
+                'socket_timeout': 30,
+                'retries': 3,
                 'extractor_args': {
                     'youtube': {
-                        'player_client': ['ios', 'android', 'tv', 'mweb']
+                        'player_client': ['android']
                     }
                 }
             },
-            # Strategy 2: iOS-only client (highest bypass success on GitHub Actions/Azure)
+            # Strategy 3: iOS client
             {
                 'outtmpl': output_template,
-                'format': 'best[ext=mp4]/bestvideo+bestaudio/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
@@ -75,33 +85,15 @@ def download_video(url, output_dir="downloads"):
                     }
                 }
             },
-            # Strategy 3: Android-only client
+            # Strategy 4: Universal stream fallback (any single or merged format)
             {
                 'outtmpl': output_template,
-                'format': 'best[ext=mp4]/best',
+                'format': 'b/bv*+ba/best',
+                'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
                 'socket_timeout': 30,
                 'retries': 3,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['android']
-                    }
-                }
-            },
-            # Strategy 4: TV embedded client
-            {
-                'outtmpl': output_template,
-                'format': 'best[ext=mp4]/best',
-                'quiet': True,
-                'no_warnings': True,
-                'socket_timeout': 30,
-                'retries': 3,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['tv_embedded', 'tv']
-                    }
-                }
             }
         ]
     else:
