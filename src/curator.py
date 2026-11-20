@@ -59,37 +59,67 @@ def scan_single_channel(target_url, limit=2):
         'playlist_items': f'1-{limit}',
         'quiet': True,
         'no_warnings': True,
+        'ignoreerrors': True,
         'socket_timeout': 10,
     }
     videos = []
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(target_url, download=False)
-            entries = info.get('entries') or []
-            for entry in entries:
-                if not entry:
+    urls_to_try = [target_url]
+    if '/shorts' in target_url:
+        urls_to_try.append(target_url.replace('/shorts', ''))
+
+    for u in urls_to_try:
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(u, download=False)
+                if not info:
                     continue
-                v_url = entry.get('url') or entry.get('webpage_url')
-                v_id = entry.get('id')
-                if v_url and ('youtube.com' in v_url or 'youtu.be' in v_url or 'instagram.com' in v_url):
-                    videos.append((v_id or v_url, v_url))
-                elif v_id:
-                    videos.append((v_id, f"https://www.youtube.com/shorts/{v_id}"))
-    except Exception:
-        pass
+                entries = info.get('entries') or []
+                for entry in entries:
+                    if not entry:
+                        continue
+                    v_url = entry.get('url') or entry.get('webpage_url')
+                    v_id = entry.get('id')
+                    if v_url and ('youtube.com' in v_url or 'youtu.be' in v_url):
+                        videos.append((v_id or v_url, v_url))
+                    elif v_id:
+                        videos.append((v_id, f"https://www.youtube.com/shorts/{v_id}"))
+                if videos:
+                    break
+        except Exception:
+            pass
     return videos
 
 def check_video_freshness(video_tuple):
-    """Fetches video upload date and verifies how fresh it is."""
+    """Fetches video upload date and verifies how fresh it is using mobile player client to bypass bot check."""
     vid_id, vid_url = video_tuple
     opts = {
         'quiet': True,
         'no_warnings': True,
+        'ignoreerrors': True,
         'socket_timeout': 10,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios']
+            }
+        }
     }
+
+    # Use cookies if available
+    yt_cookies = os.environ.get('YOUTUBE_COOKIES', '').strip()
+    if yt_cookies:
+        c_path = os.path.join(os.path.dirname(HISTORY_FILE), 'yt_cookies.txt')
+        try:
+            with open(c_path, 'w', encoding='utf-8') as f:
+                f.write(yt_cookies)
+            opts['cookiefile'] = c_path
+        except Exception:
+            pass
+
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(vid_url, download=False)
+            if not info:
+                return None
             ts = info.get('timestamp') or 0
             title = info.get('title', 'Unknown Title')
             now = time.time()
