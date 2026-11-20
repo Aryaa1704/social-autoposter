@@ -1,4 +1,4 @@
-﻿"""High-Quality Video Downloader using yt-dlp with 1080p Full HD preference."""
+﻿"""High-Quality Video Downloader using yt-dlp."""
 import os
 import re
 import uuid
@@ -21,8 +21,8 @@ def extract_reel_url(text):
 
 def download_video(url, output_dir="downloads"):
     """
-    Download video in highest available quality (up to 1080p Full HD)
-    with audio merged into MP4 format.
+    Download video in highest available single stream MP4 (1080p).
+    Does NOT require ffmpeg merging so it never crashes!
     """
     os.makedirs(output_dir, exist_ok=True)
     filename = uuid.uuid4().hex
@@ -30,8 +30,7 @@ def download_video(url, output_dir="downloads"):
 
     ydl_opts = {
         'outtmpl': output_template,
-        'format': 'best[ext=mp4]/bestvideo+bestaudio/best',
-        'merge_output_format': 'mp4',
+        'format': 'best',
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
@@ -47,20 +46,13 @@ def download_video(url, output_dir="downloads"):
         info = ydl.extract_info(url, download=True)
         downloaded_file = ydl.prepare_filename(info)
 
-    # In case format merger renamed to .mp4
     if not os.path.exists(downloaded_file):
-        mp4_path = os.path.join(output_dir, f"{filename}.mp4")
-        if os.path.exists(mp4_path):
-            downloaded_file = mp4_path
+        matches = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(filename)]
+        if matches:
+            downloaded_file = matches[0]
         else:
-            # Fallback to any file starting with filename
-            matches = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(filename)]
-            if matches:
-                downloaded_file = matches[0]
-            else:
-                raise FileNotFoundError(f"Download failed: file not found for {url}")
+            raise FileNotFoundError(f"Download failed: file not found for {url}")
 
     size_mb = os.path.getsize(downloaded_file) / (1024 * 1024)
     print(f"   📦 Downloaded high quality video: {size_mb:.2f} MB")
     return downloaded_file
-

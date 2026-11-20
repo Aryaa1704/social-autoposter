@@ -24,12 +24,10 @@ def extract_url_from_text(text):
     if not text:
         return None
     patterns = [
-        r'https?://(?:www\.)?instagram\.com/reel/[\w-]+/?',
-        r'https?://(?:www\.)?instagram\.com/reels/[\w-]+/?',
-        r'https?://(?:www\.)?instagram\.com/p/[\w-]+/?',
-        r'https?://(?:www\.)?instagram\.com/share/[\w-]+/?',
-        r'https?://(?:www\.)?youtube\.com/shorts/[\w-]+',
-        r'https?://youtu\.be/[\w-]+',
+        r'https?://[^\s]*instagram\.com/(?:reel|reels|p|share)/[^\s]+',
+        r'https?://[^\s]*instagram\.com/[^\s]+',
+        r'https?://[^\s]*youtube\.com/shorts/[^\s]+',
+        r'https?://youtu\.be/[^\s]+',
     ]
     for p in patterns:
         m = re.search(p, text)
@@ -38,12 +36,8 @@ def extract_url_from_text(text):
     return None
 
 def get_new_links_from_dm():
-    """
-    Check all DMs on the dummy account.
-    Captures any reel or short sent by ANY user (you, friends, or anyone).
-    """
-    username = os.environ.get('INSTA_DM_USERNAME')
-    password = os.environ.get('INSTA_DM_PASSWORD')
+    username = os.environ.get('INSTA_DM_USERNAME', '').strip()
+    password = os.environ.get('INSTA_DM_PASSWORD', '').strip()
     if not username or not password:
         return []
 
@@ -54,20 +48,22 @@ def get_new_links_from_dm():
     try:
         from instagrapi import Client
         cl = Client()
+        cl.set_user_agent("Instagram 350.0.0.46.90 Android (33/13; 480dpi; 1080x2400; Google/google; Pixel 7; cheetah; cheetah; en_US; 641549547)")
 
         session_path = os.path.abspath(SESSION_FILE)
+        logged_in = False
         if os.path.exists(session_path):
             try:
                 cl.load_settings(session_path)
                 cl.login(username, password)
+                logged_in = True
             except Exception:
-                cl = Client()
-                cl.login(username, password)
-        else:
-            cl.login(username, password)
+                pass
 
-        os.makedirs(os.path.dirname(session_path), exist_ok=True)
-        cl.dump_settings(session_path)
+        if not logged_in:
+            cl.login(username, password)
+            os.makedirs(os.path.dirname(session_path), exist_ok=True)
+            cl.dump_settings(session_path)
 
         # Check latest 20 conversations from ANYONE
         threads = cl.direct_threads(amount=20)
@@ -105,5 +101,5 @@ def get_new_links_from_dm():
         return new_links
 
     except Exception as e:
-        print(f"Instagram DM listener error: {e}")
+        print(f"Instagram DM listener note: {e}")
         return []
