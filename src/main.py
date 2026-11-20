@@ -18,7 +18,7 @@ from video_editor import optimize_video, extract_thumbnail_frame
 from ai_generator import analyze_video
 from youtube_uploader import upload_to_youtube
 from instagram_uploader import upload_to_instagram
-from listeners.telegram_listener import get_new_links, send_notification
+from listeners.telegram_listener import get_new_links, send_notification, extract_url
 from listeners.insta_dm_listener import get_new_links_from_dm
 
 def process_reel(url, source):
@@ -168,10 +168,21 @@ def main():
         print("❌ TELEGRAM_BOT_TOKEN is missing!")
         return
 
-    # 1. Listen from Telegram Bot
-    print("\n[TELEGRAM] Checking for links...")
-    raw_tg = get_new_links(token, chat_id)
-    links = [{"url": l, "source": "Telegram"} for l in raw_tg]
+    links = []
+
+    # 0. Check if triggered directly via Instant Webhook (repository_dispatch)
+    dispatch_raw = os.environ.get('DISPATCH_URL', '').strip()
+    if dispatch_raw:
+        clean_url = extract_url(dispatch_raw)
+        if clean_url:
+            print(f"\n⚡ [INSTANT WEBHOOK] Received real-time link from Telegram dispatch: {clean_url}")
+            links.append({"url": clean_url, "source": "Telegram (Instant Webhook)"})
+
+    # 1. Listen from Telegram Bot (fallback if not from webhook)
+    if not links:
+        print("\n[TELEGRAM] Checking for links...")
+        raw_tg = get_new_links(token, chat_id)
+        links += [{"url": l, "source": "Telegram"} for l in raw_tg]
 
     # 2. Listen from Instagram Dummy Account DMs (if configured)
     if os.environ.get('INSTA_DM_USERNAME', '').strip():

@@ -50,7 +50,10 @@ def get_new_links(token, chat_id):
         return []
 
     if not r.get("ok"):
-        print(f"Telegram API error response: {r}")
+        if r.get("error_code") == 409:
+            print("Telegram Note: Webhook is active (instant mode). getUpdates skipped.")
+        else:
+            print(f"Telegram API error response: {r}")
         return []
 
     updates = r.get("result", [])
