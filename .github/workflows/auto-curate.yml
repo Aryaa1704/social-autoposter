@@ -1,0 +1,84 @@
+name: Auto-Curator Content Reposter
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Runs automatically every 6 hours
+  workflow_dispatch:      # Allows 1-click manual trigger anytime
+
+jobs:
+  curate-and-repost:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install FFmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install --upgrade --no-cache-dir yt-dlp
+
+      - name: Restore State Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: src/state/
+          key: curator-state-
+          restore-keys: curator-state-
+
+      - name: Run Auto Curator
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          SAMBANOVA_API_KEY: ${{ secrets.SAMBANOVA_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_MODELS_TOKEN: ${{ secrets.GITHUB_MODELS_TOKEN }}
+          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_REFRESH_TOKEN_GAMING: ${{ secrets.YOUTUBE_REFRESH_TOKEN_GAMING }}
+          YOUTUBE_REFRESH_TOKEN_FACTS: ${{ secrets.YOUTUBE_REFRESH_TOKEN_FACTS }}
+          YOUTUBE_REFRESH_TOKEN_COMEDY: ${{ secrets.YOUTUBE_REFRESH_TOKEN_COMEDY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          INSTAGRAM_ACCESS_TOKEN_GAMING: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_GAMING }}
+          INSTAGRAM_USER_ID_GAMING: ${{ secrets.INSTAGRAM_USER_ID_GAMING }}
+          INSTAGRAM_ACCESS_TOKEN_TECH_FACTS: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_TECH_FACTS }}
+          INSTAGRAM_USER_ID_TECH_FACTS: ${{ secrets.INSTAGRAM_USER_ID_TECH_FACTS }}
+          INSTAGRAM_ACCESS_TOKEN_COMEDY: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_COMEDY }}
+          INSTAGRAM_USER_ID_COMEDY: ${{ secrets.INSTAGRAM_USER_ID_COMEDY }}
+          INSTAGRAM_ACCESS_TOKEN_MOVIES: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_MOVIES }}
+          INSTAGRAM_USER_ID_MOVIE: ${{ secrets.INSTAGRAM_USER_ID_MOVIE }}
+          INSTA_DM_USERNAME: ${{ secrets.INSTA_DM_USERNAME }}
+          INSTA_DM_PASSWORD: ${{ secrets.INSTA_DM_PASSWORD }}
+        run: |
+          mkdir -p src/state
+          cd src && python curator.py
+
+      - name: Save State Cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: src/state/
+          key: curator-state-${{ github.run_id }}

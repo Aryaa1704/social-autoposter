@@ -1,0 +1,27 @@
+{
+  "gaming": {
+    "youtube_channels": [
+      "https://www.youtube.com/@TotalGaming007/shorts",
+      "https://www.youtube.com/@TechnoGamerzOfficial/shorts"
+    ],
+    "instagram_accounts": [
+      "https://www.instagram.com/pubgmobile/"
+    ]
+  },
+  "movies": {
+    "youtube_channels": [
+      "https://www.youtube.com/@Marvel/shorts"
+    ],
+    "instagram_accounts": [
+      "https://www.instagram.com/marvelstudios/"
+    ]
+  },
+  "comedy": {
+    "youtube_channels": [
+      "https://www.youtube.com/@ashishchanchlanivines/shorts"
+    ],
+    "instagram_accounts": [
+      "https://www.instagram.com/theviralfever/"
+    ]
+  }
+}
