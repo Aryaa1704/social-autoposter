@@ -20,20 +20,20 @@ Analyze the video content and context provided below:
 {context}
 
 TASKS:
-1. Determine the EXACT content category: one of ["gaming", "tech_facts", "comedy", "general"].
-   - If gaming highlight/gameplay -> "gaming"
-   - If science, tech, curious facts, AI, education -> "tech_facts"
-   - If funny, prank, meme, comedy, relatable reel -> "comedy"
+1. Determine the EXACT content category: one of ["gaming", "movies", "comedy", "general"].
+   - If gaming highlight/gameplay, esports, game trailer, streamer clips -> "gaming"
+   - If movies, web series, film scenes, anime, cinema, actors, Marvel, cinematic edits -> "movies"
+   - If funny, prank, meme, comedy, relatable reel, humor, jokes -> "comedy"
    - Otherwise -> "general"
 
 Generate an ultra-engaging metadata package in valid JSON:
 {{
-    "detected_category": "gaming" | "tech_facts" | "comedy" | "general",
+    "detected_category": "gaming" | "movies" | "comedy" | "general",
     "spoken_summary": "1-3 sentences capturing what was spoken/done in the video",
     "youtube_title": "Extreme curiosity-hook title with 1-2 emojis (under 85 chars, no fake clickbait, maximum intrigue)",
     "youtube_description": "First line is a magnetic hook. Middle section explains the story or spoken dialogue. End has Call to Action and keywords.",
     "youtube_tags": ["Shorts", "Viral", "Trending", "tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"],
-    "youtube_category_id": "20 for gaming, 28 for tech_facts, 23 for comedy, 22 for general",
+    "youtube_category_id": "20 for gaming, 24 for movies, 23 for comedy, 22 for general",
     "instagram_caption": "First line hook with dialogue points and follow CTA. Clean line breaks.",
     "instagram_hashtags": ["reels", "viral", "trending", "explore", "tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10", "tag11", "tag12"],
     "content_summary": "One line summary of the video"
@@ -409,12 +409,12 @@ def get_fallback_metadata(context=""):
         title = "Level 999 IQ Gaming Moment... No Way! 😱🎮 #Shorts"
         caption = "Wait for the impossible clutch at the end! 🎮🔥\n\nDrop your IGN in comments!\n.\n."
         tags = ["Shorts", "Gaming", "Gameplay", "Clutch", "Gamer", "BGMI", "GTA5", "Viral"]
-    elif any(k in text_lower for k in ["fact", "science", "ai", "tech", "iphone", "did you know", "mind blowing", "space"]):
-        category = "tech_facts"
-        cat_id = "28"
-        title = "99% People Don't Know This Mindblowing Fact! 🤯🧠 #Shorts"
-        caption = "You won't believe how this works in real life! 🧠⚡\n\nDid you already know this?\n.\n."
-        tags = ["Shorts", "Facts", "Tech", "Mindblown", "DidYouKnow", "Science", "Knowledge"]
+    elif any(k in text_lower for k in ["movie", "movies", "film", "cinema", "marvel", "actor", "hollywood", "bollywood", "series", "anime", "scene", "drdoom", "doomsday", "ultron", "thanos", "loki", "villain"]):
+        category = "movies"
+        cat_id = "24"
+        title = "This Scene Hits Different Every Single Time... 🎬🔥 #Shorts"
+        caption = "Rate this iconic scene from 1 to 10 in comments! 🎬🍿\n\nFollow for more daily edits!\n.\n."
+        tags = ["Shorts", "Movies", "Cinema", "Film", "Scene", "Hollywood", "Marvel", "Trending"]
     elif any(k in text_lower for k in ["funny", "comedy", "prank", "laugh", "meme", "relatable", "joke"]):
         category = "comedy"
         cat_id = "23"

@@ -26,18 +26,49 @@ def get_instagram_credentials(category="general"):
     """
     Routes video to specific Instagram account based on niche:
     - gaming     -> INSTAGRAM_ACCESS_TOKEN_GAMING, INSTAGRAM_USER_ID_GAMING
-    - tech_facts -> INSTAGRAM_ACCESS_TOKEN_TECH_FACTS, INSTAGRAM_USER_ID_TECH_FACTS
     - comedy     -> INSTAGRAM_ACCESS_TOKEN_COMEDY, INSTAGRAM_USER_ID_COMEDY
+    - movies     -> INSTAGRAM_ACCESS_TOKEN_MOVIES, INSTAGRAM_USER_ID_MOVIE (matches exact user secrets)
+    - tech_facts -> INSTAGRAM_ACCESS_TOKEN_TECH_FACTS, INSTAGRAM_USER_ID_TECH_FACTS
     Fallback     -> INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID (Main Account)
     """
-    cat_key = category.upper().replace('-', '_')
-    token = os.environ.get(f"INSTAGRAM_ACCESS_TOKEN_{cat_key}", '').strip()
-    uid = os.environ.get(f"INSTAGRAM_USER_ID_{cat_key}", '').strip()
-    if token and uid:
-        print(f"   🎯 Routing to specialized Instagram account: {cat_key} (ID: {uid})")
-        return token, uid
+    cat = (category or "").lower().strip()
 
-    return os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(), os.environ.get('INSTAGRAM_USER_ID', '').strip()
+    # 1. Gaming routing
+    if any(k in cat for k in ["gaming", "game", "esports"]):
+        token = os.environ.get("INSTAGRAM_ACCESS_TOKEN_GAMING", "").strip()
+        uid = os.environ.get("INSTAGRAM_USER_ID_GAMING", "").strip()
+        if token and uid:
+            print(f"   🎯 Routing to specialized Instagram account: GAMING (ID: {uid})")
+            return token, uid
+
+    # 2. Comedy routing
+    if any(k in cat for k in ["comedy", "funny", "meme", "humor", "prank", "joke"]):
+        token = os.environ.get("INSTAGRAM_ACCESS_TOKEN_COMEDY", "").strip()
+        uid = os.environ.get("INSTAGRAM_USER_ID_COMEDY", "").strip()
+        if token and uid:
+            print(f"   🎯 Routing to specialized Instagram account: COMEDY (ID: {uid})")
+            return token, uid
+
+    # 3. Movies / Entertainment routing (handles exact secret names INSTAGRAM_ACCESS_TOKEN_MOVIES & INSTAGRAM_USER_ID_MOVIE)
+    if any(k in cat for k in ["movie", "movies", "film", "cinema", "entertainment", "series", "anime"]):
+        token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN_MOVIES") or os.environ.get("INSTAGRAM_ACCESS_TOKEN_MOVIE") or "").strip()
+        uid = (os.environ.get("INSTAGRAM_USER_ID_MOVIE") or os.environ.get("INSTAGRAM_USER_ID_MOVIES") or "").strip()
+        if token and uid:
+            print(f"   🎯 Routing to specialized Instagram account: MOVIES (ID: {uid})")
+            return token, uid
+
+    # 4. Tech / Facts routing
+    if any(k in cat for k in ["tech", "fact", "science"]):
+        token = os.environ.get("INSTAGRAM_ACCESS_TOKEN_TECH_FACTS", "").strip()
+        uid = os.environ.get("INSTAGRAM_USER_ID_TECH_FACTS", "").strip()
+        if token and uid:
+            print(f"   🎯 Routing to specialized Instagram account: TECH_FACTS (ID: {uid})")
+            return token, uid
+
+    main_token = os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip()
+    main_uid = os.environ.get('INSTAGRAM_USER_ID', '').strip()
+    print(f"   🎯 Routing to MAIN Instagram account (Category: {category}, ID: {main_uid})")
+    return main_token, main_uid
 
 def upload_to_instagram(video_path, caption, hashtags, category="general"):
     access_token, user_id = get_instagram_credentials(category)

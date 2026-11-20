@@ -21,10 +21,12 @@ from instagram_uploader import upload_to_instagram
 from listeners.telegram_listener import get_new_links, send_notification, extract_url
 from listeners.insta_dm_listener import get_new_links_from_dm
 
-def process_reel(url, source):
+def process_reel(url, source, forced_category=None):
     print("\n" + "=" * 65)
     print(f"🎬 [START] Processing: {url}")
     print(f"   Source: {source}")
+    if forced_category:
+        print(f"   📌 Forced Category from Telegram: {forced_category.upper()}")
     print("=" * 65)
 
     result = {
@@ -52,8 +54,8 @@ def process_reel(url, source):
         print("\n🤖 [3/5] Multi-AI analysis (visuals, speech, category, hook)...")
         meta = analyze_video(video_path)
         result["metadata"] = meta
-        category = meta.get("detected_category", "general")
-        print(f"   🏷️ Detected Category: {category.upper()}")
+        category = forced_category or meta.get("detected_category", "general")
+        print(f"   🏷️ Active Category: {category.upper()}")
         print(f"   🎯 Hook Title: {meta.get('youtube_title')}")
         if meta.get("spoken_summary"):
             print(f"   🎙️ Spoken Words: {meta.get('spoken_summary')}")
@@ -176,19 +178,27 @@ def main():
         clean_url = extract_url(dispatch_raw)
         if clean_url:
             print(f"\n⚡ [INSTANT WEBHOOK] Received real-time link from Telegram dispatch: {clean_url}")
-            links.append({"url": clean_url, "source": "Telegram (Instant Webhook)"})
+            forced_cat = None
+            raw_lower = dispatch_raw.lower()
+            if any(k in raw_lower for k in ["gaming", "game"]):
+                forced_cat = "gaming"
+            elif any(k in raw_lower for k in ["comedy", "funny", "meme"]):
+                forced_cat = "comedy"
+            elif any(k in raw_lower for k in ["movie", "movies", "film", "cinema"]):
+                forced_cat = "movies"
+            links.append({"url": clean_url, "source": "Telegram (Instant Webhook)", "category": forced_cat})
 
     # 1. Listen from Telegram Bot (fallback if not from webhook)
     if not links:
         print("\n[TELEGRAM] Checking for links...")
         raw_tg = get_new_links(token, chat_id)
-        links += [{"url": l, "source": "Telegram"} for l in raw_tg]
+        links += [{"url": l, "source": "Telegram", "category": None} for l in raw_tg]
 
     # 2. Listen from Instagram Dummy Account DMs (if configured)
     if os.environ.get('INSTA_DM_USERNAME', '').strip():
         print("\n[INSTAGRAM DM] Checking dummy account DMs...")
         raw_dm = get_new_links_from_dm()
-        links += [{"url": l, "source": "Instagram DM (Dummy Box)"} for l in raw_dm]
+        links += [{"url": l, "source": "Instagram DM (Dummy Box)", "category": None} for l in raw_dm]
 
     print(f"\n📊 Total new links to process: {len(links)}")
 
@@ -197,7 +207,7 @@ def main():
         return
 
     for item in links:
-        res = process_reel(item['url'], item['source'])
+        res = process_reel(item['url'], item['source'], forced_category=item.get('category'))
         msg = build_telegram_message(res)
         send_notification(token, chat_id, msg)
         print("   📬 Sent status notification to Telegram.")
