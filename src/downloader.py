@@ -45,20 +45,25 @@ def download_video(url, output_dir="downloads"):
     # Multi-client fallback strategies for YouTube to bypass bot checks on datacenter IPs
     if is_youtube:
         strategies = [
-            # Strategy 1: Default modern clients (uses visionos/web, handles separate video+audio streams)
+            # Strategy 1: Android client (evades cloud IP bot check, with cookies if provided)
             {
                 'outtmpl': output_template,
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/18/best[ext=mp4]/best',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
                 'socket_timeout': 30,
-                'retries': 5,
+                'retries': 3,
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android']
+                    }
+                }
             },
-            # Strategy 2: Android client (reliable on datacenter IPs)
+            # Strategy 2: Android Direct Stream (format 18 guaranteed single MP4)
             {
                 'outtmpl': output_template,
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
+                'format': '18/best[ext=mp4]/best',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
@@ -73,7 +78,7 @@ def download_video(url, output_dir="downloads"):
             # Strategy 3: iOS client
             {
                 'outtmpl': output_template,
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/18/best[ext=mp4]/best',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
@@ -85,10 +90,10 @@ def download_video(url, output_dir="downloads"):
                     }
                 }
             },
-            # Strategy 4: Universal stream fallback (any single or merged format)
+            # Strategy 4: Universal stream fallback (Web client with cookies or any format)
             {
                 'outtmpl': output_template,
-                'format': 'b/bv*+ba/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best/b/bv*+ba',
                 'merge_output_format': 'mp4',
                 'quiet': True,
                 'no_warnings': True,
