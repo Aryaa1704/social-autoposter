@@ -52,6 +52,11 @@ def load_sources():
             print(f"   ⚠️ Could not read curator_sources.json: {e}")
     return {}
 
+class SilentLogger:
+    def debug(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): pass
+
 def scan_single_channel(target_url, limit=2):
     """Scans a single channel for its latest 1-2 videos in ~1 second."""
     ydl_opts = {
@@ -61,6 +66,7 @@ def scan_single_channel(target_url, limit=2):
         'no_warnings': True,
         'ignoreerrors': True,
         'socket_timeout': 10,
+        'logger': SilentLogger(),
     }
     videos = []
     urls_to_try = [target_url]
@@ -97,23 +103,13 @@ def check_video_freshness(video_tuple):
         'no_warnings': True,
         'ignoreerrors': True,
         'socket_timeout': 10,
+        'logger': SilentLogger(),
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'ios']
+                'player_client': ['android']
             }
         }
     }
-
-    # Use cookies if available
-    yt_cookies = os.environ.get('YOUTUBE_COOKIES', '').strip()
-    if yt_cookies:
-        c_path = os.path.join(os.path.dirname(HISTORY_FILE), 'yt_cookies.txt')
-        try:
-            with open(c_path, 'w', encoding='utf-8') as f:
-                f.write(yt_cookies)
-            opts['cookiefile'] = c_path
-        except Exception:
-            pass
 
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -121,6 +117,16 @@ def check_video_freshness(video_tuple):
             if not info:
                 return None
             ts = info.get('timestamp') or 0
+            if not ts:
+                # Fallback to upload_date (YYYYMMDD) if timestamp not returned
+                ud = info.get('upload_date')
+                if ud and len(ud) == 8:
+                    try:
+                        import datetime
+                        dt = datetime.datetime.strptime(ud, '%Y%m%d')
+                        ts = dt.timestamp()
+                    except Exception:
+                        pass
             title = info.get('title', 'Unknown Title')
             now = time.time()
             age_days = (now - ts) / 86400.0 if ts else 999.0

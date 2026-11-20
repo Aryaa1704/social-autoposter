@@ -5,7 +5,6 @@
       "https://www.youtube.com/@TechnoGamerzOfficial/shorts",
       "https://www.youtube.com/@DynamoGaming/shorts",
       "https://www.youtube.com/@CarryisLive/shorts",
-      "https://www.youtube.com/@sc0utOP/shorts",
       "https://www.youtube.com/@Mythpat/shorts",
       "https://www.youtube.com/@ChapatiHindustaniGamer/shorts",
       "https://www.youtube.com/@LiveInsaan/shorts",
@@ -18,7 +17,9 @@
       "https://www.youtube.com/@GamerFleet/shorts",
       "https://www.youtube.com/@BeastBoyShub/shorts",
       "https://www.youtube.com/@ProBoiz95/shorts",
-      "https://www.youtube.com/@YesSmartyPie/shorts"
+      "https://www.youtube.com/@YesSmartyPie/shorts",
+      "https://www.youtube.com/@UjjwalGamer/shorts",
+      "https://www.youtube.com/@AnshuBisht/shorts"
     ]
   },
   "movies": {
@@ -28,6 +29,7 @@
       "https://www.youtube.com/@BingeOClock/shorts",
       "https://www.youtube.com/@FilmiIndian/shorts",
       "https://www.youtube.com/@YogiBoltaHai/shorts",
+      "https://www.youtube.com/@comicverse/shorts",
       "https://www.youtube.com/@MarvelIndia/shorts",
       "https://www.youtube.com/@NetflixIndia/shorts",
       "https://www.youtube.com/@PrimeVideoIN/shorts",
@@ -37,14 +39,11 @@
       "https://www.youtube.com/@BollywoodSpy/shorts",
       "https://www.youtube.com/@Filmygyan/shorts",
       "https://www.youtube.com/@MovieTalkies/shorts",
-      "https://www.youtube.com/@BollywoodHungama/shorts",
       "https://www.youtube.com/@Shemaroo/shorts"
     ]
   },
   "comedy": {
     "youtube_channels": [
-      "https://www.youtube.com/@ashishchanchlanivines/shorts",
-      "https://www.youtube.com/@BBKiVines/shorts",
       "https://www.youtube.com/@CarryMinati/shorts",
       "https://www.youtube.com/@Round2hell/shorts",
       "https://www.youtube.com/@HarshBeniwal/shorts",
@@ -52,10 +51,6 @@
       "https://www.youtube.com/@FilterCopy/shorts",
       "https://www.youtube.com/@DiceMedia/shorts",
       "https://www.youtube.com/@RVCJMedia/shorts",
-      "https://www.youtube.com/@ZakirKhan/shorts",
-      "https://www.youtube.com/@AnubhavSinghBassi/shorts",
-      "https://www.youtube.com/@AbhishekUpmanyu/shorts",
-      "https://www.youtube.com/@AmitBhadana/shorts",
       "https://www.youtube.com/@ElvishYadavVlogs/shorts",
       "https://www.youtube.com/@FukraInsaan/shorts",
       "https://www.youtube.com/@PuravJha/shorts",
@@ -69,27 +64,19 @@
   },
   "general": {
     "youtube_channels": [
-      "https://www.youtube.com/@A2Motivation/shorts",
-      "https://www.youtube.com/@FactTechz/shorts",
-      "https://www.youtube.com/@DhruvRatheeShorts/shorts",
+      "https://www.youtube.com/@dhruvrathee/shorts",
       "https://www.youtube.com/@NitishRajputShorts/shorts",
+      "https://www.youtube.com/@FactTechz/shorts",
+      "https://www.youtube.com/@A2Motivation/shorts",
       "https://www.youtube.com/@TechnicalGuruji/shorts",
       "https://www.youtube.com/@TrakinTech/shorts",
-      "https://www.youtube.com/@TechnologyGyan/shorts",
       "https://www.youtube.com/@TechBurner/shorts",
       "https://www.youtube.com/@GyanTherapy/shorts",
-      "https://www.youtube.com/@GetSetFlySCIENCE/shorts",
-      "https://www.youtube.com/@FactOPedia/shorts",
-      "https://www.youtube.com/@AnupamRajput/shorts",
-      "https://www.youtube.com/@ItsFactOfficial/shorts",
-      "https://www.youtube.com/@RajivKumarFacts/shorts",
-      "https://www.youtube.com/@MohakMangal/shorts",
-      "https://www.youtube.com/@KhanSirPatna/shorts",
-      "https://www.youtube.com/@DrishtiIAS/shorts",
       "https://www.youtube.com/@CrazyXYZ/shorts",
       "https://www.youtube.com/@MRINDIANHACKER/shorts",
       "https://www.youtube.com/@TheExperimentTV/shorts",
-      "https://www.youtube.com/@RahulMalodia/shorts"
+      "https://www.youtube.com/@ItsFactOfficial/shorts",
+      "https://www.youtube.com/@AnupamRajput/shorts"
     ]
   }
 }
