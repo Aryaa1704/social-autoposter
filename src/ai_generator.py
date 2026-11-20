@@ -104,24 +104,26 @@ def _try_gemini(video_path, api_key):
 
 def _try_groq(video_path, groq_key):
     try:
-        from groq import Groq
-        client = Groq(api_key=groq_key)
-
-        prompt = f"""
-        Generate a viral social media package for a video.
-        Format strictly as JSON:
-        {VIRAL_PROMPT}
-        """
-
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
-        )
-
-        data = json.loads(completion.choices[0].message.content)
-        print("   ✅ Groq Llama-3.3 generated metadata successfully!")
-        return data
+        import requests
+        headers = {
+            "Authorization": f"Bearer {groq_key}",
+            "Content-Type": "application/json"
+        }
+        prompt = f"Generate a viral social media package for a video.\nFormat strictly as JSON:\n{VIRAL_PROMPT}"
+        payload = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [{"role": "user", "content": prompt}],
+            "response_format": {"type": "json_object"}
+        }
+        r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
+        if r.status_code == 200:
+            data = r.json()["choices"][0]["message"]["content"]
+            parsed = json.loads(data)
+            print("   ✅ Groq Llama-3.3 generated metadata successfully via REST API!")
+            return parsed
+        else:
+            print(f"   ⚠️ Groq API returned status {r.status_code}: {r.text[:100]}")
+            return None
     except Exception as e:
         print(f"   ⚠️ Groq error: {e}")
         return None
@@ -138,3 +140,4 @@ def get_fallback_metadata():
         "instagram_hashtags": ["reels", "viral", "trending", "explore", "reelsinstagram", "fyp", "viralreels"],
         "content_summary": "Viral short clip"
     }
+

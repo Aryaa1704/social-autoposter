@@ -20,9 +20,6 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
@@ -65,4 +62,5 @@ jobs:
         with:
           path: src/state/
           key: autoposter-state-${{ github.run_id }}
+
 
