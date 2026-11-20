@@ -1,14 +1,7 @@
-﻿"""
-High-Quality Video Downloader using yt-dlp.
-Supports:
-- Instagram Reels (clean direct download)
-- YouTube Shorts (anti-bot bypass with mobile client fallback)
-- Companion metadata extraction (.meta.json) for AI generation
-"""
+﻿"""High-Quality Video Downloader using yt-dlp."""
 import os
 import re
 import uuid
-import traceback
 import yt_dlp
 
 def extract_reel_url(text):
@@ -29,110 +22,40 @@ def extract_reel_url(text):
 def download_video(url, output_dir="downloads"):
     """
     Download video in highest available single stream MP4 (1080p).
-    Auto-detects platform (Instagram vs YouTube) to use optimal strategy.
+    Does NOT require ffmpeg merging so it never crashes!
     """
     os.makedirs(output_dir, exist_ok=True)
     filename = uuid.uuid4().hex
     output_template = os.path.join(output_dir, f"{filename}.%(ext)s")
 
-    is_youtube = ("youtube.com" in url or "youtu.be" in url)
-    is_instagram = ("instagram.com" in url)
-
-    # Base options (rock solid, tested)
-    base_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
+    ydl_opts = {
+        'outtmpl': output_template,
+        'format': 'best',
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': False,
+        'socket_timeout': 30,
+        'retries': 5,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
     }
 
-    cookie_file = None
-    if is_youtube:
-        yt_cookies = os.environ.get('YOUTUBE_COOKIES', '').strip()
-        if yt_cookies:
-            cookie_file = os.path.join(output_dir, f"cookies_{filename}.txt")
-            try:
-                with open(cookie_file, 'w', encoding='utf-8') as f:
-                    f.write(yt_cookies)
-                print("   🍪 Using YouTube cookies for authentication.")
-            except Exception:
-                cookie_file = None
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        downloaded_file = ydl.prepare_filename(info)
 
-    downloaded_file = None
-    info = {}
-    last_error = None
-
-    # Strategies to attempt
-    if is_instagram:
-        strategies = [{"name": "Instagram Standard"}]
-    else:
-        # YouTube strategies: try mobile clients to bypass datacenter IP check
-        strategies = [
-            {"name": "YouTube Mobile (mweb+android)", "client": ['mweb', 'android']},
-            {"name": "YouTube iOS", "client": ['ios']},
-            {"name": "YouTube TV Embedded", "client": ['tv_embedded', 'android']},
-            {"name": "YouTube Default", "client": None}
-        ]
-
-    for attempt, strat in enumerate(strategies, 1):
-        try:
-            print(f"   📥 Downloading with strategy: {strat['name']} (attempt {attempt}/{len(strategies)})...")
-            ydl_opts = {
-                'outtmpl': output_template,
-                'format': 'best',
-                'quiet': False,
-                'no_warnings': False,
-                'extract_flat': False,
-                'socket_timeout': 45,
-                'retries': 3,
-                'http_headers': base_headers,
-            }
-
-            if is_youtube and strat.get('client'):
-                ydl_opts['extractor_args'] = {
-                    'youtube': {
-                        'player_client': strat['client'],
-                        'player_skip': ['webpage', 'configs']
-                    }
-                }
-
-            if cookie_file and os.path.exists(cookie_file):
-                ydl_opts['cookiefile'] = cookie_file
-
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                downloaded_file = ydl.prepare_filename(info)
-
-            if downloaded_file and os.path.exists(downloaded_file):
-                break
-
-            # Search in directory for output file
-            matches = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(filename) and not f.endswith('.txt') and not f.endswith('.json')]
-            if matches:
-                downloaded_file = matches[0]
-                break
-
-        except Exception as e:
-            last_error = e
-            print(f"   ⚠️ Strategy {strat['name']} failed: {e}")
-            traceback.print_exc()
-
-    # Cleanup temp cookie file
-    if cookie_file and os.path.exists(cookie_file):
-        try:
-            os.remove(cookie_file)
-        except Exception:
-            pass
-
-    if not downloaded_file or not os.path.exists(downloaded_file):
-        matches = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(filename) and not f.endswith('.txt') and not f.endswith('.json')]
+    if not os.path.exists(downloaded_file):
+        matches = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith(filename)]
         if matches:
             downloaded_file = matches[0]
         else:
-            raise Exception(f"Download failed: {last_error}")
+            raise FileNotFoundError(f"Download failed: file not found for {url}")
 
     size_mb = os.path.getsize(downloaded_file) / (1024 * 1024)
-    print(f"   📦 Successfully downloaded video: {size_mb:.2f} MB")
+    print(f"   📦 Downloaded high quality video: {size_mb:.2f} MB")
 
-    # Save metadata companion file for text LLMs
     try:
         import json
         meta_file = f"{downloaded_file}.meta.json"
