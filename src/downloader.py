@@ -55,4 +55,19 @@ def download_video(url, output_dir="downloads"):
 
     size_mb = os.path.getsize(downloaded_file) / (1024 * 1024)
     print(f"   📦 Downloaded high quality video: {size_mb:.2f} MB")
+
+    # Save metadata companion file for text LLMs
+    try:
+        import json
+        meta_file = f"{downloaded_file}.meta.json"
+        with open(meta_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                'title': info.get('title', ''),
+                'description': info.get('description', ''),
+                'tags': info.get('tags', []) or [],
+                'categories': info.get('categories', []) or []
+            }, f)
+    except Exception:
+        pass
+
     return downloaded_file

@@ -29,7 +29,7 @@ def optimize_video(input_path):
     # FFmpeg command:
     # 1. Clean metadata (-map_metadata -1)
     # 2. 1.02x speed shift (video setpts + audio atempo)
-    # 3. Fast encode H.264 + AAC
+    # 3. Fast encode H.264 + AAC with Instagram & YouTube compliance (yuv420p + faststart)
     cmd = [
         "ffmpeg", "-y",
         "-i", input_path,
@@ -38,8 +38,11 @@ def optimize_video(input_path):
         "-c:v", "libx264",
         "-preset", "veryfast",
         "-crf", "22",
+        "-pix_fmt", "yuv420p",
         "-c:a", "aac",
         "-b:a", "192k",
+        "-ar", "44100",
+        "-movflags", "+faststart",
         "-map_metadata", "-1",
         output_path
     ]
@@ -49,6 +52,13 @@ def optimize_video(input_path):
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=180)
         if res.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             print("   ✅ Video optimized and fresh footprint generated.")
+            try:
+                import shutil
+                orig_meta = f"{input_path}.meta.json"
+                if os.path.exists(orig_meta):
+                    shutil.copyfile(orig_meta, f"{output_path}.meta.json")
+            except Exception:
+                pass
             try:
                 os.remove(input_path)
             except Exception:

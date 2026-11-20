@@ -117,6 +117,11 @@ def process_reel(url, source):
                     os.remove(p)
                 except Exception:
                     pass
+                try:
+                    if os.path.exists(f"{p}.meta.json"):
+                        os.remove(f"{p}.meta.json")
+                except Exception:
+                    pass
 
     return result
 
