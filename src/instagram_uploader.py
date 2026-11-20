@@ -1,4 +1,4 @@
-﻿"""Instagram Reels Uploader via Graph API."""
+﻿"""Instagram Reels Uploader with Multi-Account Category Routing."""
 import os
 import time
 import requests
@@ -11,9 +11,27 @@ def _upload_to_temp_hosting(video_path):
         return url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
     raise Exception(f"Temp hosting upload failed: {res.text}")
 
-def upload_to_instagram(video_path, caption, hashtags):
-    access_token = os.environ['INSTAGRAM_ACCESS_TOKEN']
-    user_id = os.environ['INSTAGRAM_USER_ID']
+def get_instagram_credentials(category="general"):
+    """
+    Routes video to specific Instagram account based on niche:
+    - gaming     -> INSTAGRAM_ACCESS_TOKEN_GAMING, INSTAGRAM_USER_ID_GAMING
+    - tech_facts -> INSTAGRAM_ACCESS_TOKEN_FACTS, INSTAGRAM_USER_ID_FACTS
+    - comedy     -> INSTAGRAM_ACCESS_TOKEN_COMEDY, INSTAGRAM_USER_ID_COMEDY
+    Fallback     -> INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID (Main Account)
+    """
+    cat_key = category.upper().replace('-', '_')
+    token = os.environ.get(f"INSTAGRAM_ACCESS_TOKEN_{cat_key}", '').strip()
+    uid = os.environ.get(f"INSTAGRAM_USER_ID_{cat_key}", '').strip()
+    if token and uid:
+        print(f"   🎯 Routing to specialized Instagram account: {cat_key}")
+        return token, uid
+
+    return os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(), os.environ.get('INSTAGRAM_USER_ID', '').strip()
+
+def upload_to_instagram(video_path, caption, hashtags, category="general"):
+    access_token, user_id = get_instagram_credentials(category)
+    if not access_token or not user_id:
+        raise ValueError("Instagram credentials (token or user_id) missing for this category!")
 
     video_url = _upload_to_temp_hosting(video_path)
     tags_str = ' '.join(f'#{h.strip("#")}' for h in hashtags[:25])
@@ -42,4 +60,4 @@ def upload_to_instagram(video_path, caption, hashtags):
         raise Exception(f"Publish failed: {pub.text}")
 
     media_id = pub.json()['id']
-    return {'media_id': media_id, 'url': f"https://www.instagram.com"}
+    return {'media_id': media_id, 'url': f"https://www.instagram.com", 'category': category}

@@ -47,6 +47,12 @@ jobs:
           YOUTUBE_REFRESH_TOKEN_COMEDY: ${{ secrets.YOUTUBE_REFRESH_TOKEN_COMEDY }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          INSTAGRAM_ACCESS_TOKEN_GAMING: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_GAMING }}
+          INSTAGRAM_USER_ID_GAMING: ${{ secrets.INSTAGRAM_USER_ID_GAMING }}
+          INSTAGRAM_ACCESS_TOKEN_TECH_FACTS: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_TECH_FACTS }}
+          INSTAGRAM_USER_ID_TECH_FACTS: ${{ secrets.INSTAGRAM_USER_ID_TECH_FACTS }}
+          INSTAGRAM_ACCESS_TOKEN_COMEDY: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_COMEDY }}
+          INSTAGRAM_USER_ID_COMEDY: ${{ secrets.INSTAGRAM_USER_ID_COMEDY }}
           INSTA_DM_USERNAME: ${{ secrets.INSTA_DM_USERNAME }}
           INSTA_DM_PASSWORD: ${{ secrets.INSTA_DM_PASSWORD }}
         run: |
@@ -59,3 +65,4 @@ jobs:
         with:
           path: src/state/
           key: autoposter-state-${{ github.run_id }}
+
