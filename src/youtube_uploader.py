@@ -39,12 +39,13 @@ def upload_to_youtube(video_path, title, description, tags, category_id="22", ca
     )
     youtube = build('youtube', 'v3', credentials=credentials)
 
-    # Ensure #Shorts tag
+    # Ensure #Shorts tag & viral hashtags in description
     if not any(t.lower() in ('shorts', '#shorts') for t in tags):
         tags.append('Shorts')
 
-    if '#Shorts' not in description and '#shorts' not in description:
-        description += "\n\n#Shorts"
+    tag_hash_str = ' '.join(f"#{t.strip('#')}" for t in tags[:10])
+    if tag_hash_str not in description:
+        description += f"\n\n{tag_hash_str}"
 
     body = {
         'snippet': {

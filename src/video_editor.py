@@ -26,21 +26,23 @@ def optimize_video(input_path):
     out_dir = os.path.dirname(input_path)
     output_path = os.path.join(out_dir, f"opt_{os.path.basename(input_path)}")
 
-    # FFmpeg command:
+    # FFmpeg command for Ultra HD / 4K Crisp Quality:
     # 1. Clean metadata (-map_metadata -1)
-    # 2. 1.02x speed shift (video setpts + audio atempo)
-    # 3. Fast encode H.264 + AAC with Instagram & YouTube compliance (yuv420p + faststart)
+    # 2. 1.02x speed shift + subtle unsharp sharpening filter to counter Instagram blur
+    # 3. High Profile H.264 (CRF 17 = visually lossless, preset medium, 320k audio)
     cmd = [
         "ffmpeg", "-y",
         "-i", input_path,
-        "-filter:v", "setpts=PTS/1.02",
+        "-filter:v", "setpts=PTS/1.02,unsharp=3:3:0.6:3:3:0.0",
         "-filter:a", "atempo=1.02",
         "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-crf", "22",
+        "-profile:v", "high",
+        "-level", "4.2",
+        "-preset", "medium",
+        "-crf", "17",
         "-pix_fmt", "yuv420p",
         "-c:a", "aac",
-        "-b:a", "192k",
+        "-b:a", "320k",
         "-ar", "44100",
         "-movflags", "+faststart",
         "-map_metadata", "-1",

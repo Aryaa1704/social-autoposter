@@ -30,7 +30,8 @@ def download_video(url, output_dir="downloads"):
 
     ydl_opts = {
         'outtmpl': output_template,
-        'format': 'best',
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
+        'merge_output_format': 'mp4',
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,

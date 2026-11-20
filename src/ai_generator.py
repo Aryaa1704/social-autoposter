@@ -90,9 +90,9 @@ def _get_configured_providers(video_path):
 
     # 2. Groq Cloud
     if os.environ.get('GROQ_API_KEY', '').strip():
-        providers.append(('groq', 'Groq (Llama-3.3-70B)', lambda ctx: _call_openai_compatible(
+        providers.append(('groq', 'Groq (Llama-3.1-8B)', lambda ctx: _call_openai_compatible(
             'Groq', 'https://api.groq.com/openai/v1/chat/completions',
-            os.environ.get('GROQ_API_KEY').strip(), 'llama-3.3-70b-versatile', ctx
+            os.environ.get('GROQ_API_KEY').strip(), 'llama-3.1-8b-instant', ctx
         )))
 
     # 3. OpenRouter Free
@@ -215,13 +215,33 @@ def analyze_video(video_path):
             res = runner(context)
             if res and isinstance(res, dict) and res.get('youtube_title'):
                 print(f"   🎉 SUCCESS: {p_name} generated viral package!")
-                return res
+                return _enrich_metadata(res)
             print(f"   ⚠️ {p_name} returned incomplete result, falling back...")
         except Exception as e:
             print(f"   ⚠️ {p_name} failed ({e}), falling back...")
 
     print("   🛡️ [Final Fallback] Using Smart Dynamic Metadata Engine...")
-    return get_fallback_metadata(context)
+    return _enrich_metadata(get_fallback_metadata(context))
+
+def _enrich_metadata(res):
+    """Guarantees full set of high-ranking viral hashtags and SEO search tags."""
+    if not isinstance(res, dict):
+        return res
+    cat = res.get('detected_category', 'general').lower()
+    default_tags = {
+        'gaming': ['gaming', 'gamer', 'gameplay', 'clutch', 'bgmi', 'gta5', 'viralgaming', 'reels', 'fyp', 'trending', 'shorts'],
+        'tech_facts': ['facts', 'tech', 'science', 'mindblown', 'didyouknow', 'ai', 'education', 'reels', 'fyp', 'trending', 'shorts'],
+        'comedy': ['comedy', 'funny', 'meme', 'jokes', 'laugh', 'relatable', 'viralreels', 'reels', 'fyp', 'trending', 'shorts'],
+        'general': ['viral', 'trending', 'explore', 'foryou', 'reels', 'fyp', 'instagram', 'shorts', 'daily']
+    }
+    cur_tags = res.get('instagram_hashtags', [])
+    if not cur_tags or len(cur_tags) < 10:
+        res['instagram_hashtags'] = list(dict.fromkeys(cur_tags + default_tags.get(cat, default_tags['general'])))[:25]
+
+    cur_yt = res.get('youtube_tags', [])
+    if not cur_yt or len(cur_yt) < 10:
+        res['youtube_tags'] = list(dict.fromkeys(cur_yt + default_tags.get(cat, default_tags['general'])))[:15]
+    return res
 
 # -------------------------------------------------------------
 # Provider Implementation Callers
@@ -320,7 +340,7 @@ def _call_huggingface(hf_token, context):
         "Content-Type": "application/json"
     }
     prompt = f"Return strictly JSON with social media metadata.\n{VIRAL_PROMPT_TEMPLATE.format(context=context)}"
-    url = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct"
+    url = "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-72B-Instruct"
     payload = {
         "inputs": prompt,
         "parameters": {"max_new_tokens": 800, "return_full_text": False}
