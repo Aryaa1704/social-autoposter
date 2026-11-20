@@ -1,18 +1,6 @@
 /**
  * Cloudflare Worker: Telegram Webhook -> Instant GitHub Actions Trigger
- * 
- * Whenever you send any Instagram Reel or YouTube Short link to your Telegram bot,
- * this worker catches the webhook and fires GitHub repository_dispatch,
- * starting your workflow within 1-2 seconds!
- * 
- * How to setup:
- * 1. Create a free worker on dash.cloudflare.com -> Workers & Pages -> Create Worker
- * 2. Paste this code and save & deploy.
- * 3. In Settings -> Variables, add:
- *    - GITHUB_PAT = your github personal access token (repo permissions)
- *    - GITHUB_REPO = Aryaa1704/social-autoposter
- * 4. Set Telegram Webhook in browser:
- *    https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/setWebhook?url=<YOUR_WORKER_URL>
+ * Auto-sanitizes repo name and token to prevent 404s!
  */
 
 export default {
@@ -28,11 +16,22 @@ export default {
 
       // Check if message contains a reel or short link
       if (text.includes('instagram.com') || text.includes('youtube.com') || text.includes('youtu.be')) {
-        const repo = env.GITHUB_REPO || 'Aryaa1704/social-autoposter';
-        const pat = env.GITHUB_PAT;
+        // Auto-sanitize repo name (handles full URLs, extra spaces, etc.)
+        let repo = (env.GITHUB_REPO || 'Aryaa1704/social-autoposter').trim();
+        repo = repo.replace('https://github.com/', '')
+                   .replace('http://github.com/', '')
+                   .replace('github.com/', '')
+                   .replace(/^\/+|\/+$/g, '')
+                   .trim();
+        if (!repo || !repo.includes('/')) {
+          repo = 'Aryaa1704/social-autoposter';
+        }
+
+        // Auto-sanitize PAT token
+        let pat = (env.GITHUB_PAT || '').trim().replace(/^["']|["']$/g, '');
 
         if (!pat) {
-          return new Response('Missing GITHUB_PAT env variable', { status: 500 });
+          return new Response(JSON.stringify({ error: 'Missing GITHUB_PAT env variable' }), { status: 500 });
         }
 
         // Trigger GitHub Actions workflow instantly via repository_dispatch
@@ -41,7 +40,8 @@ export default {
           headers: {
             'Authorization': `Bearer ${pat}`,
             'User-Agent': 'Cloudflare-Worker-Telegram-Trigger',
-            'Accept': 'application/vnd.github.v3+json',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -53,8 +53,15 @@ export default {
           })
         });
 
+        const ghText = await ghResponse.text();
         const success = (ghResponse.status === 204);
-        return new Response(JSON.stringify({ success, status: ghResponse.status }), {
+
+        return new Response(JSON.stringify({
+          success,
+          status: ghResponse.status,
+          repo_called: repo,
+          github_response: ghText || 'OK'
+        }), {
           headers: { 'Content-Type': 'application/json' }
         });
       }
