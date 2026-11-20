@@ -30,7 +30,7 @@ def download_video(url, output_dir="downloads"):
 
     ydl_opts = {
         'outtmpl': output_template,
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
+        'format': 'best[ext=mp4]/bestvideo+bestaudio/best',
         'merge_output_format': 'mp4',
         'quiet': True,
         'no_warnings': True,
@@ -63,3 +63,4 @@ def download_video(url, output_dir="downloads"):
     size_mb = os.path.getsize(downloaded_file) / (1024 * 1024)
     print(f"   📦 Downloaded high quality video: {size_mb:.2f} MB")
     return downloaded_file
+
