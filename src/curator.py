@@ -23,8 +23,8 @@ HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'state',
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'curator_sources.json')
 
 # Maximum allowed video age in days (Videos older than this will NEVER be picked)
-MAX_AGE_DAYS = 3
-FALLBACK_MAX_AGE_DAYS = 7
+MAX_AGE_DAYS = 5
+FALLBACK_MAX_AGE_DAYS = 14
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
@@ -104,6 +104,8 @@ def check_video_freshness(video_tuple):
         'ignoreerrors': True,
         'socket_timeout': 10,
         'logger': SilentLogger(),
+        'js_runtimes': {'node': {}},
+        'remote_components': ['ejs:github'],
         'extractor_args': {
             'youtube': {
                 'player_client': ['android']
@@ -200,17 +202,48 @@ def run_curator():
 
         print(f"   ⏱️ Verified freshness in {time.time()-t1:.2f}s.")
 
-        # Filter by strict freshness: <= MAX_AGE_DAYS (3 days)
+        # Filter by strict freshness: <= MAX_AGE_DAYS (5 days)
         valid_fresh = [v for v in fresh_candidates if v['age_days'] <= MAX_AGE_DAYS]
 
-        # If none within 3 days, fallback to 7 days
+        # If none within 5 days, fallback to 14 days
         if not valid_fresh:
             valid_fresh = [v for v in fresh_candidates if v['age_days'] <= FALLBACK_MAX_AGE_DAYS]
             if valid_fresh:
-                print(f"   ℹ️ No videos under {MAX_AGE_DAYS} days, using fresh candidate under {FALLBACK_MAX_AGE_DAYS} days.")
+                print(f"   ℹ️ No videos under {MAX_AGE_DAYS} days, using candidate under {FALLBACK_MAX_AGE_DAYS} days.")
+
+        # If still none, search trending live shorts for this niche
+        if not valid_fresh:
+            print(f"   🔍 No candidate under {FALLBACK_MAX_AGE_DAYS} days from channel pool. Searching live trending {category} shorts...")
+            search_queries = {
+                'gaming': 'ytsearch10:gta 6 gameplay shorts',
+                'movies': 'ytsearch10:marvel cinematic shorts',
+                'comedy': 'ytsearch10:trending funny shorts india',
+                'general': 'ytsearch10:viral facts shorts india'
+            }
+            query = search_queries.get(category, f"ytsearch10:{category} viral shorts")
+            try:
+                s_opts = {
+                    'extract_flat': True,
+                    'quiet': True,
+                    'logger': SilentLogger(),
+                    'js_runtimes': {'node': {}},
+                    'remote_components': ['ejs:github'],
+                }
+                with yt_dlp.YoutubeDL(s_opts) as ydl:
+                    s_info = ydl.extract_info(query, download=False)
+                    s_entries = s_info.get('entries', []) if s_info else []
+                    for e in s_entries:
+                        s_id = e.get('id')
+                        s_url = f"https://www.youtube.com/shorts/{s_id}"
+                        if s_id and s_id not in history and s_url not in history:
+                            c_info = check_video_freshness((s_id, s_url))
+                            if c_info and c_info['age_days'] <= FALLBACK_MAX_AGE_DAYS:
+                                valid_fresh.append(c_info)
+            except Exception as se:
+                print(f"   ⚠️ Trending search note: {se}")
 
         if not valid_fresh:
-            print(f"   ⚠️ All candidates are older than {FALLBACK_MAX_AGE_DAYS} days. Skipping to avoid posting outdated content.")
+            print(f"   ⚠️ No suitable fresh candidate found for '{category}'. Skipping.")
             continue
 
         # Sort by timestamp DESCENDING (Absolute freshest / newest video first!)
